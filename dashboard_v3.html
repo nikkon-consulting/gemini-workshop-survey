@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>研修アンケート ライブダッシュボード</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1A2B4A;
+    --navy-deep: #0F1A2E;
+    --blue: #2563EB;
+    --blue-light: #3B82F6;
+    --teal: #0D9488;
+    --teal-light: #14B8A6;
+    --slate: #475569;
+    --slate-light: #94A3B8;
+    --orange: #F59E0B;
+    --white: #FFFFFF;
+    --bg: #0F1A2E;
+    --card: rgba(255,255,255,0.06);
+    --card-border: rgba(255,255,255,0.08);
+    --success: #10B981;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    height: 100vh;
+    overflow: hidden;
+    color: var(--white);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(37,99,235,0.07) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1.5rem 0.75rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header row */
+  .dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+  }
+
+  .dash-header h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .response-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: var(--slate-light);
+  }
+
+  .response-count .count-num {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--blue-light);
+    line-height: 1;
+  }
+
+  .live-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(16,185,129,0.15);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 16px;
+    padding: 4px 12px;
+    font-size: 0.65rem;
+    color: var(--success);
+    font-weight: 500;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--success);
+    border-radius: 50%;
+    animation: livePulse 1.5s infinite;
+  }
+
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.5); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+  }
+
+  /* Charts area - fills remaining space */
+  .charts-area {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 0.75rem;
+    min-height: 0;
+  }
+
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .chart-card.q1-card {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .chart-card.q2-card {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .chart-card.q3-card {
+    grid-column: 2;
+    grid-row: 1 / -1;
+  }
+
+  .chart-head {
+    flex-shrink: 0;
+    margin-bottom: 0.5rem;
+  }
+
+  .chart-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .chart-subtitle {
+    font-size: 0.6rem;
+    color: var(--slate-light);
+    font-weight: 300;
+  }
+
+  .chart-body {
+    flex: 1;
+    position: relative;
+    min-height: 0;
+  }
+
+  .chart-body canvas {
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Footer */
+  .dash-footer {
+    flex-shrink: 0;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.6rem;
+    color: rgba(148,163,184,0.5);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <div class="dash-header">
+    <h1>📊 生成AI研修 ライブアンケート</h1>
+    <div class="header-right">
+      <div class="response-count">
+        回答数 <span class="count-num" id="totalCount">0</span>
+      </div>
+      <div class="live-indicator">
+        <span class="live-dot"></span>LIVE
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts 2x2 grid: left column = Q1 + Q2, right column = Q3 full height -->
+  <div class="charts-area">
+    <!-- Q1 左上 -->
+    <div class="chart-card q1-card">
+      <div class="chart-head">
+        <div class="chart-title">Q1. 生成AIの利用経験</div>
+        <div class="chart-subtitle">Gemini・ChatGPT等を含む全般</div>
+      </div>
+      <div class="chart-body">
+        <canvas id="chartQ1"></canvas>
+      </div>
+    </div>
+
+    <!-- Q3 右側（縦にフル表示） -->
+    <div class="chart-card q3-card">
+      <div class="chart-head">
+        <div class="chart-title">Q3. 実務で活用したいこと</div>
+        <div class="chart-subtitle">各自2つ選択</div>
+      </div>
+      <div class="chart-body">
+        <canvas id="chartQ3"></canvas>
+      </div>
+    </div>
+
+    <!-- Q2 左下 -->
+    <div class="chart-card q2-card">
+      <div class="chart-head">
+        <div class="chart-title">Q2. トライアル期間中の使用頻度</div>
+        <div class="chart-subtitle">過去2週間</div>
+      </div>
+      <div class="chart-body">
+        <canvas id="chartQ2"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    最終更新：<span id="lastUpdated">—</span>　|　10秒ごとに自動更新
+  </div>
+</div>
+
+<script>
+  // === GAS Web App URL（デプロイ後に置き換えてください）===
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyBTqdDJ1FBw1AcBqwYXJz1qpRi3fYCUI1ba285fa9WP866_bv60Xdz7nFTGQRwQ1kdoQ/exec';
+
+  Chart.defaults.color = '#94A3B8';
+  Chart.defaults.font.family = "'Noto Sans JP', sans-serif";
+  Chart.defaults.font.size = 11;
+
+  const pieColors = ['#2563EB', '#0D9488', '#F59E0B', '#8B5CF6', '#EF4444'];
+  const barColorBase = [
+    'rgba(37,99,235,0.8)',
+    'rgba(13,148,136,0.8)',
+    'rgba(245,158,11,0.8)',
+    'rgba(139,92,246,0.7)',
+    'rgba(236,72,153,0.7)',
+    'rgba(99,102,241,0.6)',
+    'rgba(20,184,166,0.6)',
+    'rgba(251,146,60,0.6)',
+    'rgba(168,85,247,0.5)',
+    'rgba(244,63,94,0.5)'
+  ];
+
+  let chartQ1, chartQ2, chartQ3;
+
+  function initCharts() {
+    chartQ1 = new Chart(document.getElementById('chartQ1'), {
+      type: 'doughnut',
+      data: {
+        labels: [],
+        datasets: [{ data: [], backgroundColor: pieColors, borderWidth: 0, hoverOffset: 4 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '50%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { padding: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 9.5 } }
+          }
+        }
+      }
+    });
+
+    chartQ2 = new Chart(document.getElementById('chartQ2'), {
+      type: 'doughnut',
+      data: {
+        labels: [],
+        datasets: [{ data: [], backgroundColor: pieColors, borderWidth: 0, hoverOffset: 4 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '50%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: { padding: 8, usePointStyle: true, pointStyle: 'circle', font: { size: 9.5 } }
+          }
+        }
+      }
+    });
+
+    chartQ3 = new Chart(document.getElementById('chartQ3'), {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          data: [],
+          backgroundColor: barColorBase,
+          borderRadius: 5,
+          barThickness: 22
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, font: { size: 10 } },
+            grid: { color: 'rgba(255,255,255,0.04)' }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { size: 10 } }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  function fetchData() {
+    const cb = 'cb_' + Date.now();
+    window[cb] = function(result) {
+      updateDashboard(result);
+      delete window[cb];
+      const s = document.querySelector(`script[data-cb="${cb}"]`);
+      if (s) s.remove();
+    };
+    const s = document.createElement('script');
+    s.src = GAS_URL + '?callback=' + cb;
+    s.dataset.cb = cb;
+    s.onerror = () => { delete window[cb]; s.remove(); };
+    document.body.appendChild(s);
+  }
+
+  function updateDashboard(data) {
+    if (!data) return;
+    document.getElementById('totalCount').textContent = data.totalCount || 0;
+
+    if (data.q1) {
+      chartQ1.data.labels = Object.keys(data.q1).map(l => trunc(l, 22));
+      chartQ1.data.datasets[0].data = Object.values(data.q1);
+      chartQ1.update('none');
+    }
+
+    if (data.q2) {
+      chartQ2.data.labels = Object.keys(data.q2).map(l => trunc(l, 20));
+      chartQ2.data.datasets[0].data = Object.values(data.q2);
+      chartQ2.update('none');
+    }
+
+    if (data.q3) {
+      const sorted = Object.entries(data.q3).sort((a, b) => b[1] - a[1]);
+      chartQ3.data.labels = sorted.map(s => trunc(s[0], 20));
+      chartQ3.data.datasets[0].data = sorted.map(s => s[1]);
+      chartQ3.update('none');
+    }
+
+    document.getElementById('lastUpdated').textContent =
+      new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  function trunc(s, m) { return s.length > m ? s.slice(0, m) + '…' : s; }
+
+  initCharts();
+  fetchData();
+  setInterval(fetchData, 10000);
+</script>
+</body>
+</html>

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生成AI研修 事前アンケート</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1A2B4A;
+    --navy-deep: #0F1A2E;
+    --blue: #2563EB;
+    --blue-light: #3B82F6;
+    --teal: #0D9488;
+    --teal-light: #14B8A6;
+    --slate: #475569;
+    --slate-light: #94A3B8;
+    --orange: #F59E0B;
+    --white: #FFFFFF;
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --border: #E2E8F0;
+    --success: #10B981;
+    --error: #EF4444;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    min-height: 100vh;
+    color: var(--navy);
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 60%, #1E3A5F 100%);
+    padding: 2rem 1.5rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(13,148,136,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(37,99,235,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+
+  .header-content {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(13,148,136,0.2);
+    border: 1px solid rgba(13,148,136,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.7rem;
+    color: var(--teal-light);
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+    font-weight: 500;
+  }
+
+  .header-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--teal-light);
+    border-radius: 50%;
+    animation: pulse-dot 2s infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+  }
+
+  .header p {
+    font-size: 0.85rem;
+    color: var(--slate-light);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+
+  /* Main */
+  .main {
+    max-width: 600px;
+    margin: -1rem auto 2rem;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Question Card */
+  .question-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
+    transition: box-shadow 0.3s;
+  }
+
+  .question-card:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+  }
+
+  .question-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .q1-num { background: rgba(37,99,235,0.1); color: var(--blue); }
+  .q2-num { background: rgba(13,148,136,0.1); color: var(--teal); }
+  .q3-num { background: rgba(245,158,11,0.1); color: var(--orange); }
+
+  .question-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 0.25rem;
+    line-height: 1.5;
+  }
+
+  .question-subtitle {
+    font-size: 0.75rem;
+    color: var(--slate-light);
+    margin-bottom: 1rem;
+    font-weight: 400;
+  }
+
+  /* Radio Options */
+  .option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option-item {
+    position: relative;
+  }
+
+  .option-item input[type="radio"],
+  .option-item input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+    color: var(--slate);
+    line-height: 1.4;
+    font-weight: 400;
+  }
+
+  .option-label:hover {
+    border-color: var(--slate-light);
+    background: #F8FAFC;
+  }
+
+  .option-label .indicator {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .option-label .indicator-check {
+    border-radius: 6px;
+  }
+
+  .option-label .indicator::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .option-label .indicator-check::after {
+    border-radius: 2px;
+    width: 8px;
+    height: 8px;
+  }
+
+  /* Radio selected */
+  .option-item input[type="radio"]:checked + .option-label {
+    border-color: var(--blue);
+    background: rgba(37,99,235,0.04);
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  .option-item input[type="radio"]:checked + .option-label .indicator {
+    border-color: var(--blue);
+    background: var(--blue);
+  }
+
+  .option-item input[type="radio"]:checked + .option-label .indicator::after {
+    background: var(--white);
+  }
+
+  /* Checkbox selected */
+  .option-item input[type="checkbox"]:checked + .option-label {
+    border-color: var(--teal);
+    background: rgba(13,148,136,0.04);
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  .option-item input[type="checkbox"]:checked + .option-label .indicator-check {
+    border-color: var(--teal);
+    background: var(--teal);
+  }
+
+  .option-item input[type="checkbox"]:checked + .option-label .indicator-check::after {
+    background: var(--white);
+  }
+
+  /* Checkbox count */
+  .selection-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--slate-light);
+    margin-top: 8px;
+    padding: 6px 0;
+  }
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(13,148,136,0.1);
+    color: var(--teal);
+    font-weight: 700;
+    font-size: 0.7rem;
+    padding: 0 6px;
+    transition: all 0.3s;
+  }
+
+  .count-badge.full {
+    background: var(--teal);
+    color: var(--white);
+  }
+
+  .count-badge.over {
+    background: var(--error);
+    color: var(--white);
+  }
+
+  /* Submit */
+  .submit-area {
+    padding-top: 0.5rem;
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue-light) 100%);
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(37,99,235,0.4);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Success state */
+  .success-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15,26,46,0.9);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    animation: fadeIn 0.3s;
+  }
+
+  .success-overlay.show {
+    display: flex;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .success-card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 3rem 2rem;
+    text-align: center;
+    max-width: 380px;
+    width: 100%;
+    animation: slideUp 0.4s ease-out;
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(16,185,129,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 1.8rem;
+  }
+
+  .success-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 0.5rem;
+  }
+
+  .success-card p {
+    font-size: 0.85rem;
+    color: var(--slate);
+    line-height: 1.6;
+  }
+
+  /* Error */
+  .error-msg {
+    display: none;
+    color: var(--error);
+    font-size: 0.75rem;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .error-msg.show { display: block; }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.7rem;
+    color: var(--slate-light);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-content">
+    <div class="header-badge">LIVE SURVEY</div>
+    <h1>生成AI「Gemini」活用研修<br>事前アンケート</h1>
+    <p>研修をより効果的にするため、3つの質問にご回答ください。<br>所要時間：約1分</p>
+  </div>
+</div>
+
+<div class="main">
+  <form id="surveyForm">
+
+    <!-- Q1 -->
+    <div class="question-card">
+      <div class="question-number q1-num">Q1</div>
+      <div class="question-title">生成AIの利用経験を教えてください</div>
+      <div class="question-subtitle">GeminiだけでなくChatGPT等も含めた全般的な経験</div>
+      <div class="option-list">
+        <div class="option-item">
+          <input type="radio" name="q1" id="q1_1" value="業務でもプライベートでも日常的に使っている">
+          <label class="option-label" for="q1_1"><span class="indicator"></span>業務でもプライベートでも日常的に使っている</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q1" id="q1_2" value="プライベートでは使っているが、業務ではまだあまり使えていない">
+          <label class="option-label" for="q1_2"><span class="indicator"></span>プライベートでは使っているが、業務ではまだあまり使えていない</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q1" id="q1_3" value="今回のトライアルで初めて本格的に触った">
+          <label class="option-label" for="q1_3"><span class="indicator"></span>今回のトライアルで初めて本格的に触った</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q1" id="q1_4" value="興味はあるが、ほとんど触ったことがない">
+          <label class="option-label" for="q1_4"><span class="indicator"></span>興味はあるが、ほとんど触ったことがない</label>
+        </div>
+      </div>
+      <div class="error-msg" id="q1Error">Q1を選択してください</div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="question-card">
+      <div class="question-number q2-num">Q2</div>
+      <div class="question-title">トライアル期間中のGemini使用頻度</div>
+      <div class="question-subtitle">過去2週間での使用状況</div>
+      <div class="option-list">
+        <div class="option-item">
+          <input type="radio" name="q2" id="q2_1" value="ほぼ毎日3時間以上使った">
+          <label class="option-label" for="q2_1"><span class="indicator"></span>ほぼ毎日3時間以上使った</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q2" id="q2_2" value="ほぼ毎日使った（1日1回以上）">
+          <label class="option-label" for="q2_2"><span class="indicator"></span>ほぼ毎日使った（1日1回以上）</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q2" id="q2_3" value="2日に1回くらい使った">
+          <label class="option-label" for="q2_3"><span class="indicator"></span>2日に1回くらい使った</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q2" id="q2_4" value="週に2〜3回使った">
+          <label class="option-label" for="q2_4"><span class="indicator"></span>週に2〜3回使った</label>
+        </div>
+        <div class="option-item">
+          <input type="radio" name="q2" id="q2_5" value="数回だけ試した">
+          <label class="option-label" for="q2_5"><span class="indicator"></span>数回だけ試した</label>
+        </div>
+      </div>
+      <div class="error-msg" id="q2Error">Q2を選択してください</div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="question-card">
+      <div class="question-number q3-num">Q3</div>
+      <div class="question-title">Geminiを実務で活用したいこと</div>
+      <div class="question-subtitle">2つ選択してください</div>
+      <div class="option-list">
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_1" value="メール・ビジネス文書の作成や添削">
+          <label class="option-label" for="q3_1"><span class="indicator indicator-check"></span>メール・ビジネス文書の作成や添削</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_2" value="議事録・会議メモの作成や要約">
+          <label class="option-label" for="q3_2"><span class="indicator indicator-check"></span>議事録・会議メモの作成や要約</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_3" value="プレゼン資料（スライド）の構成・作成">
+          <label class="option-label" for="q3_3"><span class="indicator indicator-check"></span>プレゼン資料（スライド）の構成・作成</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_4" value="情報リサーチ・業界動向の調査">
+          <label class="option-label" for="q3_4"><span class="indicator indicator-check"></span>情報リサーチ・業界動向の調査</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_5" value="データの整理・表やグラフの作成">
+          <label class="option-label" for="q3_5"><span class="indicator indicator-check"></span>データの整理・表やグラフの作成</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_6" value="カタログや技術資料の要約・比較表作成">
+          <label class="option-label" for="q3_6"><span class="indicator indicator-check"></span>カタログや技術資料の要約・比較表作成</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_7" value="報告書・提案書のドラフト作成">
+          <label class="option-label" for="q3_7"><span class="indicator indicator-check"></span>報告書・提案書のドラフト作成</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_8" value="アイデア出し・ブレインストーミング">
+          <label class="option-label" for="q3_8"><span class="indicator indicator-check"></span>アイデア出し・ブレインストーミング</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_9" value="社内マニュアルやFAQの整備">
+          <label class="option-label" for="q3_9"><span class="indicator indicator-check"></span>社内マニュアルやFAQの整備</label>
+        </div>
+        <div class="option-item">
+          <input type="checkbox" name="q3" id="q3_10" value="業務手順の自動化・テンプレート化">
+          <label class="option-label" for="q3_10"><span class="indicator indicator-check"></span>業務手順の自動化・テンプレート化</label>
+        </div>
+      </div>
+      <div class="selection-count">
+        選択数：<span class="count-badge" id="countBadge">0</span> / 2
+      </div>
+      <div class="error-msg" id="q3Error">2つ選択してください</div>
+    </div>
+
+    <!-- Submit -->
+    <div class="submit-area">
+      <button type="submit" class="submit-btn" id="submitBtn">回答を送信する</button>
+    </div>
+  </form>
+
+  <div class="footer">
+    生成AI「Google Gemini」活用研修
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div class="success-overlay" id="successOverlay">
+  <div class="success-card">
+    <div class="success-icon">✅</div>
+    <h2>ご回答ありがとうございます！</h2>
+    <p>研修の準備が整うまで<br>しばらくお待ちください。</p>
+  </div>
+</div>
+
+<script>
+  // === GAS Web App URL（デプロイ後に置き換えてください）===
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbyBTqdDJ1FBw1AcBqwYXJz1qpRi3fYCUI1ba285fa9WP866_bv60Xdz7nFTGQRwQ1kdoQ/exec';
+
+  // Checkbox limit (2)
+  const MAX_CHECK = 2;
+  const checkboxes = document.querySelectorAll('input[name="q3"]');
+  const countBadge = document.getElementById('countBadge');
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = document.querySelectorAll('input[name="q3"]:checked');
+      countBadge.textContent = checked.length;
+      countBadge.classList.toggle('full', checked.length === MAX_CHECK);
+      countBadge.classList.toggle('over', checked.length > MAX_CHECK);
+
+      if (checked.length >= MAX_CHECK) {
+        checkboxes.forEach(c => {
+          if (!c.checked) c.closest('.option-item').style.opacity = '0.4';
+          else c.closest('.option-item').style.opacity = '1';
+        });
+        // Uncheck excess
+        if (checked.length > MAX_CHECK) {
+          cb.checked = false;
+          countBadge.textContent = MAX_CHECK;
+          countBadge.classList.remove('over');
+          const rechecked = document.querySelectorAll('input[name="q3"]:checked');
+          checkboxes.forEach(c => {
+            if (!c.checked) c.closest('.option-item').style.opacity = '0.4';
+            else c.closest('.option-item').style.opacity = '1';
+          });
+        }
+      } else {
+        checkboxes.forEach(c => c.closest('.option-item').style.opacity = '1');
+      }
+    });
+  });
+
+  // Form submit
+  document.getElementById('surveyForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Validate
+    let valid = true;
+    const q1 = document.querySelector('input[name="q1"]:checked');
+    const q2 = document.querySelector('input[name="q2"]:checked');
+    const q3checked = document.querySelectorAll('input[name="q3"]:checked');
+
+    document.getElementById('q1Error').classList.toggle('show', !q1);
+    document.getElementById('q2Error').classList.toggle('show', !q2);
+    document.getElementById('q3Error').classList.toggle('show', q3checked.length !== MAX_CHECK);
+
+    if (!q1 || !q2 || q3checked.length !== MAX_CHECK) return;
+
+    // Disable button
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '送信中...';
+
+    // Build data
+    const data = {
+      q1: q1.value,
+      q2: q2.value,
+      q3: Array.from(q3checked).map(c => c.value)
+    };
+
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      document.getElementById('successOverlay').classList.add('show');
+    } catch (err) {
+      alert('送信に失敗しました。もう一度お試しください。');
+      btn.disabled = false;
+      btn.textContent = '回答を送信する';
+    }
+  });
+</script>
+</body>
+</html>
